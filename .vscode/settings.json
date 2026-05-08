@@ -1,0 +1,5 @@
+{
+    "modelRouter.routing.valueModeEnabled": true,
+    "modelRouter.planner.source": "copilot",
+    "modelRouter.planner.followCurrentChatModel": true
+}

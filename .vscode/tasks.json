@@ -1,0 +1,57 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"command": "npm run compile",
+			"group": "build",
+			"problemMatcher": "$tsc",
+			"label": "npm: compile",
+			"options": {
+				"shell": {
+					"executable": "powershell.exe",
+					"args": [
+						"-ExecutionPolicy",
+						"Bypass",
+						"-Command"
+					]
+				}
+			}
+		},
+		{
+			"type": "shell",
+			"command": "npm run watch",
+			"isBackground": true,
+			"problemMatcher": "$tsc-watch",
+			"label": "npm: watch",
+			"options": {
+				"shell": {
+					"executable": "powershell.exe",
+					"args": [
+						"-ExecutionPolicy",
+						"Bypass",
+						"-Command"
+					]
+				}
+			}
+		},
+		{
+			"label": "npm: package",
+			"type": "shell",
+			"command": "npm run package",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build",
+			"options": {
+				"shell": {
+					"executable": "powershell.exe",
+					"args": [
+						"-ExecutionPolicy",
+						"Bypass",
+						"-Command"
+					]
+				}
+			}
+		}
+	]
+}

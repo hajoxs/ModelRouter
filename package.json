@@ -1,0 +1,238 @@
+{
+  "name": "copilot-model-switcher",
+  "displayName": "Copilot Model Switcher",
+  "description": "Hybrid VS Code model router: use Copilot-compatible premium models for low-token planning, optional context-report diagnosis, and final review while cheap third-party models execute.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onChatParticipant:model-router.chat"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "modelRouter.openConfig",
+        "title": "模型路由器：打开配置界面"
+      },
+      {
+        "command": "modelRouter.setProviderApiKey",
+        "title": "模型路由器：设置执行模型 API Key"
+      },
+      {
+        "command": "modelRouter.testExecutionProvider",
+        "title": "模型路由器：测试执行模型连接"
+      },
+      {
+        "command": "modelRouter.runDebugLoop",
+        "title": "模型路由器：运行性价比调试"
+      },
+      {
+        "command": "modelRouter.useChatModelAsPlanner",
+        "title": "模型路由器：使用当前 Copilot 模型作为贵模型"
+      },
+      {
+        "command": "modelRouter.enableValueMode",
+        "title": "模型路由器：启用性价比模式"
+      },
+      {
+        "command": "modelRouter.disableValueMode",
+        "title": "模型路由器：关闭性价比模式"
+      }
+    ],
+    "configuration": {
+      "title": "Copilot Model Switcher",
+      "properties": {
+        "modelRouter.routing.valueModeEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用后，@model-router 使用当前 Copilot Chat 选择的模型作为贵模型，但只做低 token 需求理解、按需读取结果诊断和终检；低风险任务会自动跳过一次贵模型诊断。"
+        },
+        "modelRouter.planner.modelId": {
+          "type": "string",
+          "default": "",
+          "description": "固定 Copilot/VS Code LM 贵模型的 id。仅在贵模型来源为 Copilot 时生效，留空时自动选择。"
+        },
+        "modelRouter.planner.source": {
+          "type": "string",
+          "enum": [
+            "copilot",
+            "thirdParty"
+          ],
+          "default": "copilot",
+          "description": "贵模型来源。copilot 使用 VS Code Language Model，thirdParty 使用下方配置的第三方 provider/model。"
+        },
+        "modelRouter.planner.thirdPartyProviderId": {
+          "type": "string",
+          "default": "deepseek",
+          "description": "当贵模型来源为 thirdParty 时使用的 provider id。"
+        },
+        "modelRouter.planner.thirdPartyModel": {
+          "type": "string",
+          "default": "deepseek-v4-pro",
+          "description": "当贵模型来源为 thirdParty 时使用的模型。"
+        },
+        "modelRouter.planner.followCurrentChatModel": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用后，每次 @model-router 请求都使用 Copilot Chat 当前选择的模型作为贵模型。仅在贵模型来源为 Copilot 或性价比模式开启时生效。"
+        },
+        "modelRouter.execution.defaultProvider": {
+          "type": "string",
+          "default": "deepseek",
+          "description": "默认便宜执行模型 provider id。"
+        },
+        "modelRouter.execution.defaultModel": {
+          "type": "string",
+          "default": "deepseek-v4-flash",
+          "description": "默认便宜执行模型。"
+        },
+        "modelRouter.execution.fallbackModel": {
+          "type": "string",
+          "default": "deepseek-v4-pro",
+          "description": "便宜执行模型失败后的备用升级模型。"
+        },
+        "modelRouter.execution.providers": {
+          "type": "array",
+          "default": [
+            {
+              "id": "deepseek",
+              "displayName": "DeepSeek",
+              "baseUrl": "https://api.deepseek.com/v1",
+              "defaultModel": "deepseek-v4-flash",
+              "fallbackModel": "deepseek-v4-pro",
+              "enabled": true
+            },
+            {
+              "id": "kimi",
+              "displayName": "Moonshot / Kimi",
+              "baseUrl": "https://api.moonshot.cn/v1",
+              "defaultModel": "kimi-k2.6",
+              "enabled": false
+            }
+          ],
+          "description": "第三方 provider 元数据，供便宜执行模型、第三方贵模型和中间审查模型共用。API Key 单独保存在 VS Code SecretStorage。"
+        },
+        "modelRouter.controller.maxExpensiveInputChars": {
+          "type": "number",
+          "default": 3500,
+          "minimum": 800,
+          "description": "发送给贵模型控制器或终检模型的最大字符数。控制阶段只发送极简环境提示，不发送完整文件。"
+        },
+        "modelRouter.controller.maxExpensiveOutputChars": {
+          "type": "number",
+          "default": 1200,
+          "minimum": 300,
+          "description": "贵模型预期最大输出字符数。控制器必须返回短 JSON。"
+        },
+        "modelRouter.controller.finalReviewEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用后，贵模型会按任务风险决定是否需要读取结果诊断，并在便宜模型完成后做一次最终检查；不参与代码生成和多轮改写。"
+        },
+        "modelRouter.reviewer.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用后，在便宜模型完成后自动使用中间审查模型检查输出是否满足贵模型要求。"
+        },
+        "modelRouter.reviewer.providerId": {
+          "type": "string",
+          "default": "deepseek",
+          "description": "中间审查模型使用的 provider id。"
+        },
+        "modelRouter.reviewer.model": {
+          "type": "string",
+          "default": "deepseek-v4-pro",
+          "description": "中间审查模型使用的模型，例如 deepseek-v4-pro。"
+        },
+        "modelRouter.worker.maxCheapContextChars": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 4000,
+          "description": "发送给便宜执行模型的代码/工具上下文最大字符数。"
+        },
+        "modelRouter.debug.maxCheapIterations": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 8,
+          "description": "贵模型终检停止循环前允许的便宜模型最大迭代次数。"
+        },
+        "modelRouter.debug.allowTerminalTools": {
+          "type": "boolean",
+          "default": false,
+          "description": "允许贵模型把终端命令列入便宜模型工具计划。MVP 中命令不会在未经用户确认时自动执行。"
+        },
+        "modelRouter.tokenStats.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "自动显示贵模型和便宜模型的实时 token 统计。"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "modelRouter",
+          "title": "Model Router",
+          "icon": "resources/model-router.svg"
+        }
+      ]
+    },
+    "views": {
+      "modelRouter": [
+        {
+          "id": "modelRouter.configView",
+          "name": "Configuration",
+          "icon": "resources/model-router.svg"
+        }
+      ]
+    },
+    "chatParticipants": [
+      {
+        "id": "model-router.chat",
+        "name": "model-router",
+        "fullName": "Copilot Model Switcher",
+        "description": "Routes requests through a premium low-token controller/context diagnostician/final judge and a cheap execution worker.",
+        "commands": [
+          {
+            "name": "useCurrentModel",
+            "description": "使用当前 Copilot Chat 选择的模型作为贵模型。"
+          },
+          {
+            "name": "valueMode",
+            "description": "启用性价比模式：贵模型跟随当前 Copilot 选择模型，便宜模型负责执行。"
+          },
+          {
+            "name": "debug",
+            "description": "运行性价比调试：贵模型理解问题，便宜模型执行调试。"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "tsc --noEmit -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.89.0",
+    "@vscode/vsce": "^2.15.0",
+    "typescript": "^5.4.5"
+  }
+}
