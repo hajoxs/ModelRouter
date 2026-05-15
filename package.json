@@ -20,6 +20,10 @@
   "contributes": {
     "commands": [
       {
+        "command": "modelRouter.openRoutedChat",
+        "title": "模型路由器：打开 @model-router 对话"
+      },
+      {
         "command": "modelRouter.openConfig",
         "title": "模型路由器：打开配置界面"
       },

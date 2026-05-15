@@ -115,12 +115,13 @@ export class RequestPipeline {
 
   private renderCurrentModelOption(request: vscode.ChatRequest, stream: vscode.ChatResponseStream): void {
     const label = this.getModelLabel(request.model);
+    const executionProvider = this.settings.getProvider();
     const mode = this.settings.valueModeEnabled
       ? '性价比模式：贵模型跟随当前 Copilot 模型，便宜模型执行'
       : this.settings.premiumModel.source === 'thirdParty'
         ? `第三方贵模型：${this.settings.premiumModel.thirdPartyProviderId}/${this.settings.premiumModel.thirdPartyModel}`
         : this.settings.followCurrentChatModel ? '跟随当前 Copilot 模型' : '固定/自动选择贵模型';
-    stream.markdown(`路由模式：**${mode}**。当前 Copilot 模型：**${label}**。`);
+    stream.markdown(`当前请求入口：**@model-router**。路由模式：**${mode}**。当前 Copilot 模型：**${label}**。便宜执行模型：**${executionProvider.displayName} / ${executionProvider.defaultModel}**。`);
     if (!this.settings.valueModeEnabled) {
       stream.button({
         command: 'modelRouter.enableValueMode',

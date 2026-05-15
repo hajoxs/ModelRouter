@@ -41,6 +41,10 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   }));
 
+  context.subscriptions.push(vscode.commands.registerCommand('modelRouter.openRoutedChat', async () => {
+    await vscode.commands.executeCommand('workbench.action.chat.open', '@model-router ');
+  }));
+
   context.subscriptions.push(vscode.commands.registerCommand('modelRouter.openConfig', async () => {
     configViewProvider.openPanel();
   }));
@@ -100,14 +104,14 @@ export function activate(context: vscode.ExtensionContext): void {
     await settings.updatePlannerModelId(modelId);
     await settings.updateValueModeEnabled(true);
     await settings.updateFollowCurrentChatModel(true);
-    vscode.window.showInformationMessage(`性价比模式已启用，贵模型将跟随当前 Copilot 模型：${label ?? modelId}。`);
+    vscode.window.showInformationMessage(`性价比模式已启用，贵模型将跟随当前 Copilot 模型：${label ?? modelId}。注意：该模式仅对 @model-router 对话生效。`);
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('modelRouter.enableValueMode', async () => {
     await settings.updatePremiumModelSource('copilot');
     await settings.updateValueModeEnabled(true);
     await settings.updateFollowCurrentChatModel(true);
-    vscode.window.showInformationMessage('已启用性价比模式。贵模型跟随当前 Copilot 模型，便宜模型负责读取、生成、调试和长输出。');
+    vscode.window.showInformationMessage('已启用性价比模式。注意：该模式仅对 @model-router 对话生效；普通 Copilot 对话不会被本扩展接管。');
     await vscode.commands.executeCommand('workbench.action.chat.open', '@model-router ');
   }));
 
@@ -134,20 +138,20 @@ export function deactivate(): void {}
 
 function updateStatusBar(statusBarItem: vscode.StatusBarItem, settings: SettingsStore): void {
   if (settings.valueModeEnabled) {
-    statusBarItem.text = '$(zap) 性价比模式';
-    statusBarItem.tooltip = '已启用性价比模式：贵模型跟随当前 Copilot 模型，但只做需求理解、按需读取结果诊断和终检；低风险任务会自动跳过一次贵模型诊断。';
-    statusBarItem.command = 'modelRouter.openConfig';
+    statusBarItem.text = '$(zap) 性价比模式 @model-router';
+    statusBarItem.tooltip = '仅对 @model-router 对话生效：贵模型跟随当前 Copilot 模型，但只做需求理解、按需读取结果诊断和终检；便宜模型负责执行。点击直接打开 @model-router。';
+    statusBarItem.command = 'modelRouter.openRoutedChat';
     return;
   }
 
   if (settings.premiumModel.source === 'thirdParty') {
     statusBarItem.text = '$(cloud) 第三方贵模型';
-    statusBarItem.tooltip = '当前贵模型来自第三方 provider，点击打开配置界面。';
-    statusBarItem.command = 'modelRouter.openConfig';
+    statusBarItem.tooltip = '当前贵模型来自第三方 provider。该路由仅在 @model-router 对话中生效，点击直接打开 @model-router。';
+    statusBarItem.command = 'modelRouter.openRoutedChat';
     return;
   }
 
   statusBarItem.text = '$(circuit-board) 模型路由器';
-  statusBarItem.tooltip = '打开 Copilot Model Switcher 配置';
+  statusBarItem.tooltip = '启用性价比模式并打开 @model-router 对话';
   statusBarItem.command = 'modelRouter.enableValueMode';
 }
