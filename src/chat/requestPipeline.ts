@@ -129,6 +129,10 @@ export class RequestPipeline {
       });
     }
     stream.button({
+      command: 'modelRouter.openRoutedChat',
+      title: '继续在 @model-router 中提问'
+    });
+    stream.button({
       command: 'modelRouter.useChatModelAsPlanner',
       title: '贵模型跟随当前模型',
       arguments: [request.model.id, label]
