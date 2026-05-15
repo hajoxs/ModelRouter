@@ -79,7 +79,7 @@ export class RequestPipeline {
       const issues = judgement.issues.length > 0 ? judgement.issues.join('；') : '未发现明显问题。';
       stream.markdown(`\n\n**贵模型终检：**${judgement.passed ? '通过' : '未完全通过'}（置信度：${judgement.confidence}）。${issues}`);
     } else {
-      stream.markdown('\n\n**贵模型终检：**已按读取结果诊断自动跳过，本轮交由便宜模型直接完成。');
+      stream.markdown('\n\n**贵模型终检：**已按低风险快速路由自动跳过，本轮交由便宜模型直接完成。');
     }
   }
 
@@ -110,7 +110,15 @@ export class RequestPipeline {
   }
 
   private shouldRunFinalReview(diagnosis?: { requiresFinalReview?: boolean }): boolean {
-    return this.settings.finalReviewEnabled && (diagnosis?.requiresFinalReview !== false);
+    if (!this.settings.finalReviewEnabled) {
+      return false;
+    }
+
+    if (!diagnosis) {
+      return false;
+    }
+
+    return diagnosis.requiresFinalReview !== false;
   }
 
   private renderCurrentModelOption(request: vscode.ChatRequest, stream: vscode.ChatResponseStream): void {

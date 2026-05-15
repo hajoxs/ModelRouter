@@ -6,6 +6,7 @@ const PARTICIPANT_ID = 'model-router.chat';
 export function registerModelRouterParticipant(context: vscode.ExtensionContext, pipeline: RequestPipeline): void {
   const participant = vscode.chat.createChatParticipant(PARTICIPANT_ID, async (request, _context, stream, token) => {
     try {
+      stream.progress('已进入 @model-router，正在开始路由。');
       await pipeline.handle(request, stream, token);
       return {
         metadata: {

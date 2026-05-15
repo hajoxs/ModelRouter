@@ -46,7 +46,7 @@ export class SettingsStore {
 
   get reviewModel(): ReviewModelConfig {
     return {
-      enabled: this.config.get<boolean>('reviewer.enabled', true),
+      enabled: this.config.get<boolean>('reviewer.enabled', false),
       providerId: this.config.get<string>('reviewer.providerId', this.defaultExecutionProviderId),
       model: this.config.get<string>('reviewer.model', this.fallbackExecutionModel)
     };

@@ -144,8 +144,8 @@
         },
         "modelRouter.reviewer.enabled": {
           "type": "boolean",
-          "default": true,
-          "description": "启用后，在便宜模型完成后自动使用中间审查模型检查输出是否满足贵模型要求。"
+          "default": false,
+          "description": "按需启用后，在便宜模型完成后自动使用中间审查模型检查输出是否满足贵模型要求。默认关闭以减少串行等待时间。"
         },
         "modelRouter.reviewer.providerId": {
           "type": "string",
